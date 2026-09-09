@@ -1,7 +1,8 @@
 import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const pdfParseModule = require("pdf-parse");
+const pdfParse = pdfParseModule.default || pdfParseModule;
 import mammoth from "mammoth";
 import fs from "fs/promises";
 import Document from "../../backend/models/Document.js";
