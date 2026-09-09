@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -110,11 +109,13 @@ app.all(
   })
 );
 
-// Lessons
+// Lessons & Jobs
 app.all(
   "/api/lessons/generate",
   runHandler(generateLessonHandler)
 );
+app.all("/jobs", runHandler(generateLessonHandler));
+app.all("/api/jobs", runHandler(generateLessonHandler));
 app.all(
   "/api/lessons/:id",
   runHandler(lessonByIdHandler, (req) => {
