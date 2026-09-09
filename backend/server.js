@@ -1,4 +1,4 @@
-import jobsHandler from "../api/jobs/index.js";
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -134,8 +134,6 @@ app.all("/api/quiz/submit", runHandler(submitQuizHandler));
 
 // AI Tutor
 app.all("/api/tutor/ask", runHandler(tutorHandler));
-app.all("/api/jobs", runHandler(jobsHandler));
-app.all("/jobs", runHandler(jobsHandler));
 
 // 404 handler
 app.use((req, res) => {
