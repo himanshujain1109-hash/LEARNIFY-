@@ -1,3 +1,4 @@
+import jobsHandler from "../api/jobs/index.js";
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -18,13 +19,7 @@ import tutorHandler from "../api/tutor/ask.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// FRONTEND_URL supports one or more comma-separated origins, e.g.
-// "https://learnify-ai.vercel.app,https://learnify.app". Trailing slashes
-// are stripped because "https://site.com/" !== "https://site.com" as far
-// as the browser's Origin header / CORS matching is concerned — a trailing
-// slash left in the env var is a very common cause of registration/login
-// silently failing in production with no visible error beyond "Network
-// Error" in the browser console.
+// Parse FRONTEND_URL environment variable
 const allowedOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
   .map((o) => o.trim().replace(/\/+$/, ""))
@@ -42,11 +37,20 @@ app.use(
   cors({
     origin(origin, callback) {
       // Allow non-browser requests (curl, server-to-server, health checks)
-      // which have no Origin header at all.
       if (!origin) return callback(null, true);
       if (allowedOrigins.length === 0) return callback(null, true);
+
       const normalized = origin.replace(/\/+$/, "");
-      if (allowedOrigins.includes(normalized)) return callback(null, true);
+
+      // Allow listed origins, localhost, or any Vercel preview domain (*.vercel.app)
+      if (
+        allowedOrigins.includes(normalized) ||
+        normalized.includes("localhost") ||
+        normalized.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
       console.warn(`⚠️  Blocked CORS request from origin: ${origin}`);
       return callback(new Error("Not allowed by CORS"));
     },
@@ -79,8 +83,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Adapter for the existing Vercel-style handlers.
-// The same handlers can therefore run on Render/Express.
+// Adapter for existing Vercel-style handlers on Express
 const runHandler = (handler, mapQuery) => async (req, res, next) => {
   try {
     if (mapQuery) mapQuery(req);
@@ -131,6 +134,8 @@ app.all("/api/quiz/submit", runHandler(submitQuizHandler));
 
 // AI Tutor
 app.all("/api/tutor/ask", runHandler(tutorHandler));
+app.all("/api/jobs", runHandler(jobsHandler));
+app.all("/jobs", runHandler(jobsHandler));
 
 // 404 handler
 app.use((req, res) => {
@@ -154,7 +159,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect MongoDB before accepting requests.
+// Connect MongoDB before accepting requests
 const startServer = async () => {
   try {
     if (!process.env.MONGODB_URI) {
@@ -179,7 +184,7 @@ const startServer = async () => {
       console.log(`🔗 Health: /api/health`);
       console.log(
         allowedOrigins.length
-          ? `🔒 CORS allowed origins: ${allowedOrigins.join(", ")}`
+          ? `🔒 CORS allowed origins: ${allowedOrigins.join(", ")} (plus *.vercel.app & localhost)`
           : "🔓 CORS allowing all origins (FRONTEND_URL not set)"
       );
     });
